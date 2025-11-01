@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 
 export default function HabitDetailPage({ params }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { id } = params;
+  const { id } = use(params);
 
   useEffect(() => {
     fetchHabitAnalytics();

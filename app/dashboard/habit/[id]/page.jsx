@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
+import { DateTime } from 'luxon';
 
 export default function HabitDetailPage({ params }) {
   const [data, setData] = useState(null);
@@ -40,17 +41,15 @@ export default function HabitDetailPage({ params }) {
   const { habit, streak, completionRate, chartData } = data;
 
   const formatDateInTimezone = (dateString) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${day}/${month}`;
+    // 🌍 FIXED: Always format dates in Asia/Kolkata timezone for consistency
+    const date = DateTime.fromISO(dateString).setZone('Asia/Kolkata');
+    return date.toFormat('dd/MM');
   };
 
   const getDayName = (dateString) => {
-    const date = new Date(dateString);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return days[date.getDay()];
+    // 🌍 FIXED: Always get day name in Asia/Kolkata timezone for consistency
+    const date = DateTime.fromISO(dateString).setZone('Asia/Kolkata');
+    return date.toFormat('ccc'); // 'ccc' gives short day name like 'Mon', 'Tue', etc.
   };
 
   return (

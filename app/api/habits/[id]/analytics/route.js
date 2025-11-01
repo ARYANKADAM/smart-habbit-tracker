@@ -4,6 +4,7 @@ import Habit from '@/models/Habit';
 import Streak from '@/models/Streaks';
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { DateTime } from 'luxon';
 
 export async function GET(request, { params }) {
   try {
@@ -22,41 +23,50 @@ export async function GET(request, { params }) {
 
     const streak = await Streak.findOne({ habitId: id });
     
-    // Get today's date at midnight (in local timezone)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 🌍 FIXED: Always use Asia/Kolkata timezone for consistent behavior
+    const userTimezone = 'Asia/Kolkata';
+    const today = DateTime.now().setZone(userTimezone).startOf('day');
+    const thirtyDaysAgo = today.minus({ days: 29 }); // 30 days including today
     
-    // Calculate 30 days ago
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29); // 30 days including today
+    console.log('📊 Analytics date range:', {
+      timezone: userTimezone,
+      today: today.toISO(),
+      thirtyDaysAgo: thirtyDaysAgo.toISO(),
+      todayFormatted: today.toFormat('dd/MM'),
+      thirtyDaysAgoFormatted: thirtyDaysAgo.toFormat('dd/MM')
+    });
 
-    // Query logs
+    // Query logs using UTC dates (since database stores in UTC)
     const logs = await DailyLog.find({
       habitId: id,
-      date: { $gte: thirtyDaysAgo, $lte: today }
+      date: { 
+        $gte: thirtyDaysAgo.toUTC().toJSDate(), 
+        $lte: today.toUTC().toJSDate() 
+      }
     }).sort({ date: 1 }).lean();
+    
+    console.log(`📊 Found ${logs.length} logs for analytics`);
 
     const completed = logs.filter(l => l.completed).length;
     const completionRate = logs.length > 0 ? Math.round((completed / logs.length) * 100) : 0;
 
-    // Build chart data for last 30 days
+    // Build chart data for last 30 days using consistent timezone
     const chartData = [];
     for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
+      const date = today.minus({ days: i }); // Date in Asia/Kolkata timezone
       
       // Format date as YYYY-MM-DD for comparison
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = date.toFormat('yyyy-MM-dd');
       
       // Find if there's a log for this date
       const log = logs.find(l => {
-        const logDateStr = new Date(l.date).toISOString().split('T')[0];
+        const logDate = DateTime.fromJSDate(l.date, { zone: 'UTC' }).setZone(userTimezone);
+        const logDateStr = logDate.toFormat('yyyy-MM-dd');
         return logDateStr === dateStr;
       });
       
       chartData.push({
-        date: date.toISOString(), // Send as ISO string, frontend will format
+        date: date.toISO(), // Send as ISO string with timezone info
         completed: log?.completed ? 1 : 0,
       });
     }

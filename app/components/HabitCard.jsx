@@ -5,7 +5,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Trash2, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
 
-export default function HabitCard({ habit, streak, onCheckIn, onDelete }) {
+export default function HabitCard({ habit, streak, onCheckIn, onDelete, onAchievementUnlock }) {
   const [loading, setLoading] = useState(false);
   // ✅ FIX: Update local state when prop changes (when navigating back)
   const [completedToday, setCompletedToday] = useState(habit.completedToday || false);
@@ -18,9 +18,14 @@ export default function HabitCard({ habit, streak, onCheckIn, onDelete }) {
   const handleCheck = async (completed) => {
     setLoading(true);
     try {
-      const updatedStreak = await onCheckIn(habit._id, completed);
+      const result = await onCheckIn(habit._id, completed);
       toast.success(completed ? '✅ Great job!' : '⏭️ Skipped');
-      setCompletedToday(true);
+      setCompletedToday(completed);
+      
+      // Handle achievement notifications
+      if (result.newAchievements && result.newAchievements.length > 0 && onAchievementUnlock) {
+        onAchievementUnlock(result.newAchievements);
+      }
     } catch (err) {
       toast.error('Error checking in');
       console.error(err);

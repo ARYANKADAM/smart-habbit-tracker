@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+const UserContext = createContext(null);
+
+export const useUser = () => {
+  const context = useContext(UserContext);
+  return context;
+};
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -25,6 +32,7 @@ export default function DashboardLayout({ children }) {
       console.log('🔍 Email:', data.user?.email);
       setUser(data.user);
     } catch (error) {
+      console.error('Auth check error:', error);
       router.push('/auth/login');
     } finally {
       setLoading(false);
@@ -39,11 +47,11 @@ export default function DashboardLayout({ children }) {
     );
   }
 
-  // ✅ Pass user data to children
-  console.log('🔍 Layout passing user to children:', user);
+  // ✅ Use Context instead of cloneElement
+  console.log('🔍 Layout providing user to context:', user);
   return (
-    <>
-      {React.cloneElement(children, { currentUser: user })}
-    </>
+    <UserContext.Provider value={user}>
+      {children}
+    </UserContext.Provider>
   );
 }

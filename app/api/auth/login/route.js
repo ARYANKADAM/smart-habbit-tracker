@@ -41,9 +41,9 @@ export async function POST(request) {
       {
         message: 'Logged in successfully',
         user: {
-    _id: user._id,
-    email: user.email,
-    displayName: user.displayName || reqBody.displayName || 'Anonymous User',
+          _id: user._id,
+          email: user.email,
+          displayName: user.displayName,
         },
       },
       { status: 200 }

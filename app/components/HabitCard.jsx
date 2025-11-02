@@ -47,59 +47,104 @@ export default function HabitCard({ habit, streak, onCheckIn, onDelete }) {
   };
 
   return (
-    <div
-      className="bg-gray-900/70 p-6 rounded-2xl border border-gray-700 shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
-      style={{ borderLeft: `5px solid ${habit.color}` }}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold text-gray-100">{habit.habitName}</h3>
-          {habit.description && <p className="text-gray-400 mt-1">{habit.description}</p>}
-          <span className="inline-block px-2 py-1 text-xs rounded-lg bg-gray-800 text-gray-300 mt-2">
-            {habit.category}
-          </span>
+    <div className="group bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 p-6 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl hover:border-white/30 relative overflow-hidden">
+      {/* Color accent stripe */}
+      <div 
+        className="absolute top-0 left-0 w-1 h-full"
+        style={{ backgroundColor: habit.color }}
+      ></div>
+      
+      {/* Completion status indicator */}
+      {completedToday && (
+        <div className="absolute top-4 right-4">
+          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg"></div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex-1 pr-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div 
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: habit.color }}
+            ></div>
+            <h3 className="text-xl font-bold text-white group-hover:text-white/90 transition-colors">
+              {habit.habitName}
+            </h3>
+          </div>
+          
+          {habit.description && (
+            <p className="text-white/60 text-sm mb-3 line-clamp-2 leading-relaxed">
+              {habit.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-white/10 text-white/80 border border-white/20">
+              {habit.category}
+            </span>
+            {completedToday && (
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-400/20 text-green-300 border border-green-400/30">
+                ✓ Done
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="text-right">
-          <div className="text-3xl font-extrabold text-orange-400 drop-shadow-sm">
-            {streak?.currentStreak || 0}
+        <div className="text-center">
+          <div className="relative">
+            <div className="text-3xl font-black text-transparent bg-gradient-to-br from-orange-400 to-red-400 bg-clip-text drop-shadow-sm">
+              {streak?.currentStreak || 0}
+            </div>
+            <div className="absolute -inset-1 bg-gradient-to-br from-orange-400/20 to-red-400/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
-          <p className="text-xs text-gray-400">🔥 Streak</p>
+          <p className="text-xs text-white/50 font-medium mt-1">🔥 Day Streak</p>
+          {streak?.longestStreak > 0 && streak?.longestStreak !== streak?.currentStreak && (
+            <p className="text-xs text-white/30 mt-1">Best: {streak.longestStreak}</p>
+          )}
         </div>
       </div>
 
-      <div className="flex gap-2 mt-5">
-        {!completedToday && (
+      <div className="flex gap-3">
+        {!completedToday ? (
           <>
             <button
               onClick={() => handleCheck(true)}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 bg-green-600/80 hover:bg-green-500 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:hover:scale-100"
             >
-              <CheckCircle size={18} /> Done
+              <CheckCircle size={18} /> 
+              <span className="hidden sm:inline">Complete</span>
             </button>
 
             <button
               onClick={() => handleCheck(false)}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 bg-gray-700/70 hover:bg-gray-600 text-gray-100 py-2 rounded-lg font-semibold transition disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white/90 py-3 px-4 rounded-xl font-medium transition-all duration-300 border border-white/20 hover:border-white/30 disabled:opacity-50"
             >
-              <XCircle size={18} /> Skip
+              <XCircle size={18} />
+              <span className="hidden sm:inline">Skip</span>
             </button>
           </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center gap-2 bg-green-500/20 text-green-400 py-3 px-4 rounded-xl font-medium border border-green-500/30">
+            <CheckCircle size={18} />
+            <span>Completed Today!</span>
+          </div>
         )}
 
         <Link
           href={`/dashboard/habit/${habit._id}`}
-          className="flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 text-white py-2 rounded-lg font-semibold transition"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl min-w-[44px]"
         >
-          <BarChart3 size={18} /> View
+          <BarChart3 size={18} />
+          <span className="hidden lg:inline">Analytics</span>
         </Link>
 
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="px-3 bg-red-600/80 hover:bg-red-500 text-white rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex items-center justify-center bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 py-3 px-4 rounded-xl transition-all duration-300 border border-red-500/30 hover:border-red-500/50 disabled:opacity-50 min-w-[44px]"
         >
           <Trash2 size={18} />
         </button>

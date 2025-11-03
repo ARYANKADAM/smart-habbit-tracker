@@ -22,7 +22,7 @@ export default function Sidebar() {
           <Link
             key={link.href}
             href={link.href}
-            className={`block px-4 py-3 rounded-lg font-medium transition flex items-center gap-2 ${
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition ${
               isActive(link.href)
                 ? 'bg-indigo-600 text-white'
                 : 'text-gray-700 hover:bg-gray-200'

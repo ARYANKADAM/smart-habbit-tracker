@@ -13,6 +13,9 @@ export default function GoogleSignInButton() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      console.log('🔥 Firebase Auth Domain:', auth.app.options.authDomain);
+      console.log('🌐 Current URL:', window.location.href);
+      
       // Sign in with Google popup
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;

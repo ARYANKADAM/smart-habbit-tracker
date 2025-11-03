@@ -24,32 +24,41 @@ export async function POST(request) {
       : DateTime.now().setZone(userTimezone).startOf('day').toJSDate();
 
     // Create/update daily log
-    await DailyLog.findOneAndUpdate(
+    const dailyLog = await DailyLog.findOneAndUpdate(
       { userId, habitId, date: logDate },
       { completed },
       { new: true, upsert: true }
     );
 
-    // ✅ NEW: Update the Habit's lastCompletedDate field
-    // In app/api/check-in/route.js, add this after line 43:
-if (completed) {
-  const updatedHabit = await Habit.findOneAndUpdate(
-    { _id: habitId, userId },
-    { 
-      $set: { 
-        lastCompletedDate: logDate 
-      } 
-    },
-    { new: true } // Return updated document
-  );
-  
-  console.log('✅ Updated habit in DB:', {
-    habitId,
-    logDate: logDate.toISOString(),
-    savedLastCompletedDate: updatedHabit.lastCompletedDate?.toISOString(),
-    match: logDate.getTime() === updatedHabit.lastCompletedDate?.getTime()
-  });
-}
+    console.log('📝 Daily log created/updated:', {
+      userId,
+      habitId,
+      logDate: logDate.toISOString(),
+      completed,
+      timezone: userTimezone,
+      logId: dailyLog._id
+    });
+
+    // Update habit last completed date
+    let updatedHabit = null;
+    if (completed) {
+      updatedHabit = await Habit.findOneAndUpdate(
+        { _id: habitId, userId },
+        { 
+          $set: { 
+            lastCompletedDate: logDate 
+          } 
+        },
+        { new: true }
+      );
+      
+      console.log('✅ Updated habit in DB:', {
+        habitId,
+        habitName: updatedHabit?.habitName,
+        logDate: logDate.toISOString(),
+        savedLastCompletedDate: updatedHabit.lastCompletedDate?.toISOString()
+      });
+    }
 
     // Update streak
     const streak = await updateStreakAfterCheckIn(habitId, completed, userTimezone);

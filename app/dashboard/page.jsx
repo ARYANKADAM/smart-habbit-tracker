@@ -154,6 +154,9 @@ export default function DashboardPage() {
           h._id === habitId ? { ...h, completedToday: completed } : h
         )
       );
+
+
+
       return data;
     } catch (err) {
       console.error('Check-in error:', err);
@@ -396,6 +399,8 @@ export default function DashboardPage() {
           onClose={handleCloseAchievements}
         />
       )}
+
+
     </div>
   );
 }

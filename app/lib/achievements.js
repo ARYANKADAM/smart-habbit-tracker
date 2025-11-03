@@ -113,3 +113,4 @@ export const ACHIEVEMENT_CATEGORIES = {
   milestones: { name: 'Milestones', icon: '🏆', color: 'purple' },
   special: { name: 'Special', icon: '⭐', color: 'pink' },
 };
+

@@ -66,9 +66,9 @@ export default function AnalyticsPage() {
                   </div>
                   <div>
                     <h1 className="text-4xl sm:text-5xl font-bold text-white mb-1">
-                      Weekly Analytics
+                      Monthly Analytics
                     </h1>
-                    <p className="text-white/60 text-lg">Your progress insights and trends</p>
+                    <p className="text-white/60 text-lg">Your progress insights and trends (Last 30 days)</p>
                   </div>
                 </div>
               </div>
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
                 <span className="text-2xl">📈</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">This Week's Performance</h2>
+                <h2 className="text-2xl font-bold text-white">Last 30 Days Performance</h2>
                 <p className="text-white/60">Your overall habit completion summary</p>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div className="space-y-6">
                 <div>
-                  <p className="text-white/70 text-lg mb-2">Weekly Completion Rate</p>
+                  <p className="text-white/70 text-lg mb-2">Monthly Completion Rate</p>
                   <p className="text-6xl font-black text-transparent bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text">
                     {data.weeklyPercentage}%
                   </p>
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                    <p className="text-white/60 text-sm mb-1">This Week</p>
+                    <p className="text-white/60 text-sm mb-1">Last 30 Days</p>
                     <p className="text-2xl font-bold text-white">{Math.round(data.weeklyPercentage)}%</p>
                   </div>
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
@@ -253,8 +253,8 @@ export default function AnalyticsPage() {
                         {/* Progress Bar */}
                         <div className="mb-3">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-white/70 text-sm">Weekly Progress</span>
-                            <span className="text-white font-semibold">{habit.completed}/7 days</span>
+                            <span className="text-white/70 text-sm">Monthly Progress</span>
+                            <span className="text-white font-semibold">{habit.completed}/30 days</span>
                           </div>
                           <div className="h-3 bg-white/10 rounded-full overflow-hidden">
                             <div
@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
                         <div className="text-2xl font-black text-white">
                           {Math.round(habit.percentage)}%
                         </div>
-                        <div className="text-white/60 text-xs mt-1">This Week</div>
+                        <div className="text-white/60 text-xs mt-1">Last 30 Days</div>
                       </div>
                     </div>
                   </div>

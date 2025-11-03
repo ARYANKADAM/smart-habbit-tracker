@@ -107,26 +107,56 @@ export default function AchievementsPage() {
           <p className="text-gray-300">Celebrate your habit-building journey!</p>
         </div>
 
-        {/* Stats Overview */}
+        {/* Enhanced Stats Overview */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <div className="text-3xl font-bold text-white">{stats.totalPoints}</div>
-              <div className="text-sm text-gray-300">Total Points</div>
+          <>
+            {/* Main Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-lg rounded-2xl p-6 border border-purple-500/30">
+                <div className="text-3xl font-bold text-white">{stats.totalPoints}</div>
+                <div className="text-sm text-gray-300">Total Points</div>
+              </div>
+              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-lg rounded-2xl p-6 border border-green-500/30">
+                <div className="text-3xl font-bold text-white">{stats.unlockedCount}</div>
+                <div className="text-sm text-gray-300">Achievements Unlocked</div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 backdrop-blur-lg rounded-2xl p-6 border border-blue-500/30">
+                <div className="text-3xl font-bold text-white">{stats.totalCount}</div>
+                <div className="text-sm text-gray-300">Total Available</div>
+              </div>
+              <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-lg rounded-2xl p-6 border border-orange-500/30">
+                <div className="text-3xl font-bold text-white">{stats.completionRate}%</div>
+                <div className="text-sm text-gray-300">Achievement Progress</div>
+              </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <div className="text-3xl font-bold text-white">{stats.unlockedCount}</div>
-              <div className="text-sm text-gray-300">Unlocked</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <div className="text-3xl font-bold text-white">{stats.totalCount}</div>
-              <div className="text-sm text-gray-300">Total Available</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <div className="text-3xl font-bold text-white">{stats.completionRate}%</div>
-              <div className="text-sm text-gray-300">Completion</div>
-            </div>
-          </div>
+            
+            {/* Current Progress Stats */}
+            {stats.currentStats && (
+              <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6 mb-8">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span>📊</span> Current Progress
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-400">{stats.currentStats.maxStreak}</div>
+                    <div className="text-sm text-gray-300">Best Streak</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-400">{stats.currentStats.totalHabits}</div>
+                    <div className="text-sm text-gray-300">Active Habits</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-400">{stats.currentStats.weeklyCompletionRate}%</div>
+                    <div className="text-sm text-gray-300">Weekly Rate</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-400">{stats.currentStats.totalCompletedDays}</div>
+                    <div className="text-sm text-gray-300">Total Days</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Category Filter */}
@@ -202,6 +232,22 @@ export default function AchievementsPage() {
                     {achievement.description}
                   </p>
 
+                  {/* Progress Bar for Locked Achievements */}
+                  {!achievement.isUnlocked && achievement.progressPercent > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-400">Progress</span>
+                        <span className="text-xs text-gray-400">{achievement.progressPercent}%</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full bg-gradient-to-r ${category.color} transition-all duration-500`}
+                          style={{ width: `${achievement.progressPercent}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Points and Date */}
                   <div className="flex items-center justify-between">
                     <div className={`flex items-center gap-2 ${achievement.isUnlocked ? 'text-white' : 'text-gray-400'}`}>
@@ -209,11 +255,15 @@ export default function AchievementsPage() {
                       <span className="font-bold">{achievement.points} pts</span>
                     </div>
                     
-                    {achievement.isUnlocked && (
+                    {achievement.isUnlocked ? (
                       <div className="text-xs text-white/60">
                         {formatDate(achievement.unlockedAt)}
                       </div>
-                    )}
+                    ) : achievement.meetsCondition ? (
+                      <div className="text-xs text-green-400 font-medium">
+                        Ready to unlock!
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Lock Overlay for Locked Achievements */}

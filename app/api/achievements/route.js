@@ -23,14 +23,60 @@ export async function GET() {
     // Get all possible achievements
     const allAchievements = Object.values(ACHIEVEMENTS_CONFIG);
     
-    // Mark which achievements are unlocked
+    // DYNAMIC: Calculate current user data for real-time progress
+    const userData = await calculateUserAchievementData(userId);
+    
+    console.log('🏆 Real-time achievement data:', {
+      userId,
+      totalHabits: userData.totalHabits,
+      maxStreak: userData.maxStreak,
+      weeklyCompletionRate: userData.weeklyCompletionRate,
+      totalCompletedDays: userData.totalCompletedDays
+    });
+    
+    // Mark which achievements are unlocked and check conditions
     const achievementsWithStatus = allAchievements.map(achievement => {
       const userAchievement = userAchievements.find(ua => ua.achievementId === achievement.id);
+      const isUnlocked = !!userAchievement;
+      const meetsCondition = achievement.condition(userData);
+      
+      // Calculate progress percentage
+      let progressPercent = 0;
+      if (!isUnlocked) {
+        switch (achievement.id) {
+          case 'first-streak':
+            progressPercent = Math.min((userData.maxStreak / 3) * 100, 100);
+            break;
+          case 'week-warrior':
+            progressPercent = Math.min((userData.maxStreak / 7) * 100, 100);
+            break;
+          case 'multi-tasker':
+            progressPercent = Math.min((userData.totalHabits / 5) * 100, 100);
+            break;
+          case 'perfectionist':
+            progressPercent = userData.weeklyCompletionRate;
+            break;
+          case 'consistency-king':
+            progressPercent = Math.min((userData.totalCompletedDays / 30) * 100, 100);
+            break;
+          case 'streak-master':
+            progressPercent = Math.min((userData.maxStreak / 30) * 100, 100);
+            break;
+          default:
+            progressPercent = meetsCondition ? 100 : 0;
+        }
+      } else {
+        progressPercent = 100;
+      }
+      
       return {
         ...achievement,
-        isUnlocked: !!userAchievement,
+        isUnlocked,
         unlockedAt: userAchievement?.unlockedAt || null,
         points: userAchievement?.points || achievement.points,
+        meetsCondition,
+        progressPercent: Math.round(progressPercent),
+        currentData: userData // Include current stats
       };
     });
 
@@ -46,6 +92,8 @@ export async function GET() {
         unlockedCount,
         totalCount,
         completionRate: Math.round((unlockedCount / totalCount) * 100),
+        // DYNAMIC: Add real-time user stats
+        currentStats: userData
       }
     }, { status: 200 });
   } catch (error) {
@@ -116,11 +164,21 @@ async function checkForNewAchievements(userId) {
 }
 
 async function calculateUserAchievementData(userId) {
-  // Get user's habits
-  const habits = await Habit.find({ userId });
+  // Get user's ACTIVE habits only
+  const habits = await Habit.find({ userId, isActive: true });
   
-  // Get all daily logs
-  const dailyLogs = await DailyLog.find({ userId }).sort({ date: 1 });
+  // Get daily logs only for active habits
+  const activeHabitIds = habits.map(h => h._id);
+  const dailyLogs = await DailyLog.find({ 
+    userId,
+    habitId: { $in: activeHabitIds }
+  }).sort({ date: 1 });
+  
+  console.log('📊 Achievement calculation with active habits only:', {
+    totalHabits: habits.length,
+    activeHabitIds: activeHabitIds.map(id => id.toString()),
+    totalLogs: dailyLogs.length
+  });
   
   // Calculate streaks for all habits
   let maxStreak = 0;

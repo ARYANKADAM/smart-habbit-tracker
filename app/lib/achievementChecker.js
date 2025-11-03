@@ -72,13 +72,23 @@ async function calculateUserAchievementData(userId) {
   // Calculate weekly completion rate (last 7 days)
   const oneWeekAgo = DateTime.now().setZone('Asia/Kolkata').minus({ days: 7 }).startOf('day');
   const recentLogs = dailyLogs.filter(log => 
-    DateTime.fromISO(log.date).setZone('Asia/Kolkata') >= oneWeekAgo
+    DateTime.fromJSDate(log.date).setZone('Asia/Kolkata') >= oneWeekAgo
   );
   
   const completedInWeek = recentLogs.filter(log => log.completed).length;
   const totalPossibleInWeek = habits.length * 7;
   const weeklyCompletionRate = totalPossibleInWeek > 0 ? 
     Math.round((completedInWeek / totalPossibleInWeek) * 100) : 0;
+  
+  console.log('🏆 Achievement calculation debug:', {
+    oneWeekAgo: oneWeekAgo.toISO(),
+    totalLogs: dailyLogs.length,
+    recentLogs: recentLogs.length,
+    completedInWeek,
+    totalPossibleInWeek,
+    weeklyCompletionRate,
+    totalHabits: habits.length
+  });
   
   // Calculate total completed days
   const totalCompletedDays = dailyLogs.filter(log => log.completed).length;
@@ -113,8 +123,8 @@ function calculateStreaks(logs) {
   
   for (let i = 0; i < logs.length; i++) {
     if (i > 0) {
-      const prevDate = DateTime.fromISO(logs[i - 1].date).setZone('Asia/Kolkata');
-      const currDate = DateTime.fromISO(logs[i].date).setZone('Asia/Kolkata');
+      const prevDate = DateTime.fromJSDate(logs[i - 1].date).setZone('Asia/Kolkata');
+      const currDate = DateTime.fromJSDate(logs[i].date).setZone('Asia/Kolkata');
       
       if (currDate.diff(prevDate, 'days').days === 1) {
         tempStreak++;
@@ -126,7 +136,7 @@ function calculateStreaks(logs) {
     }
     
     // Check if this is part of current streak (ending today or yesterday)
-    const logDate = DateTime.fromISO(logs[i].date).setZone('Asia/Kolkata');
+    const logDate = DateTime.fromJSDate(logs[i].date).setZone('Asia/Kolkata');
     const daysDiff = today.diff(logDate, 'days').days;
     if (daysDiff <= 1 && i === logs.length - 1) {
       currentStreak = tempStreak;

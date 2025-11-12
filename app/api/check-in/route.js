@@ -18,6 +18,12 @@ export async function POST(request) {
     if (completed === undefined)
       return NextResponse.json({ error: 'Completed status required' }, { status: 400 });
 
+    // Verify habit exists and is active
+    const habit = await Habit.findOne({ _id: habitId, userId, isActive: true });
+    if (!habit) {
+      return NextResponse.json({ error: 'Habit not found or inactive' }, { status: 404 });
+    }
+
     const userTimezone = timezone || 'Asia/Kolkata';
     const logDate = date
       ? DateTime.fromISO(date, { zone: userTimezone }).startOf('day').toJSDate()
@@ -63,23 +69,10 @@ export async function POST(request) {
     // Update streak
     const streak = await updateStreakAfterCheckIn(habitId, completed, userTimezone);
 
-    // Check for new achievements when habit is completed
-    let newAchievements = [];
-    if (completed) {
-      try {
-        // Import achievement checking function dynamically to avoid circular imports
-        const { checkForNewAchievements } = await import('@/lib/achievementChecker');
-        newAchievements = await checkForNewAchievements(userId);
-      } catch (achievementError) {
-        console.log('Achievement check failed (non-critical):', achievementError);
-      }
-    }
-
     // Return completedToday flag so frontend can update immediately
     return NextResponse.json({ 
       streak, 
-      completedToday: completed,
-      newAchievements
+      completedToday: completed
     }, { status: 200 });
   } catch (error) {
     console.error('Check-in API error:', error);

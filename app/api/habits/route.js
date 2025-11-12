@@ -13,7 +13,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const habits = await Habit.find({ userId });
+    // Only return active habits
+    const habits = await Habit.find({ userId, isActive: true });
 
     return NextResponse.json({ habits }, { status: 200 });
   } catch (error) {

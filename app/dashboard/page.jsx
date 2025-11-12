@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import HabitCard from '@/components/HabitCard';
 import AddHabitForm from '@/components/AddHabitForm';
-import AchievementNotification from '@/components/AchievementNotification';
 import { DateTime } from 'luxon';
 
 export default function DashboardPage() {
@@ -16,7 +15,6 @@ export default function DashboardPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
-  const [achievementNotifications, setAchievementNotifications] = useState([]);
 
   const userTimezone = currentUser?.timezone || 'Asia/Kolkata';
 
@@ -166,14 +164,6 @@ export default function DashboardPage() {
   const handleDeleteHabit = (habitId) =>
     setHabits((prev) => prev.filter((h) => h._id !== habitId));
 
-  const handleAchievementUnlock = (newAchievements) => {
-    setAchievementNotifications(newAchievements);
-  };
-
-  const handleCloseAchievements = () => {
-    setAchievementNotifications([]);
-  };
-
   const handleDropdownRoute = (path) => {
     router.push(path);
     setShowDropdown(false);
@@ -289,11 +279,11 @@ export default function DashboardPage() {
                       Analytics
                     </button>
                     <button
-                      onClick={() => handleDropdownRoute('/dashboard/achievements')}
-                      className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white/90 hover:text-white"
+                      onClick={() => handleDropdownRoute('/dashboard/progress')}
+                      className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-white/10 transition-colors"
                     >
-                      <span className="w-4 h-4 text-center">🏆</span>
-                      Achievements
+                      <span className="w-4 h-4 text-center">�</span>
+                      Progress
                     </button>
                     <div className="border-t border-white/10">
                       <button
@@ -384,21 +374,12 @@ export default function DashboardPage() {
                   streak={streaks[habit._id]}
                   onCheckIn={handleCheckIn}
                   onDelete={handleDeleteHabit}
-                  onAchievementUnlock={handleAchievementUnlock}
                 />
               ))}
             </div>
           </>
         )}
       </div>
-
-      {/* Achievement Notifications */}
-      {achievementNotifications.length > 0 && (
-        <AchievementNotification
-          achievements={achievementNotifications}
-          onClose={handleCloseAchievements}
-        />
-      )}
 
 
     </div>

@@ -45,15 +45,33 @@ export async function DELETE(req, { params }) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const habitId = params.id;
-    const habit = await Habit.findOneAndDelete({ _id: habitId, userId });
+    const habit = await Habit.findOne({ _id: habitId, userId });
 
     if (!habit) {
       return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Habit deleted successfully' }, { status: 200 });
+    // Import models for cascade deletion
+    const DailyLog = (await import('@/models/DailyLog')).default;
+    const Goal = (await import('@/models/Goal')).default;
+    const StreakChallenge = (await import('@/models/StreakChallenge')).default;
+    const Streaks = (await import('@/models/Streaks')).default;
+
+    // CASCADE DELETE: Remove all related data permanently
+    await Promise.all([
+      Habit.findByIdAndDelete(habitId), // Delete the habit
+      DailyLog.deleteMany({ habitId }), // Delete all daily logs
+      Goal.deleteMany({ habitId }), // Delete all goals
+      StreakChallenge.deleteMany({ habitId }), // Delete all streak challenges
+      Streaks.deleteMany({ habitId }), // Delete all streak records
+    ]);
+
+    return NextResponse.json({ 
+      message: 'Habit and all related data deleted permanently',
+      deletedHabit: habit.habitName 
+    }, { status: 200 });
   } catch (err) {
-    console.error(err);
+    console.error('Delete habit error:', err);
     return NextResponse.json({ error: 'Failed to delete habit' }, { status: 500 });
   }
 }

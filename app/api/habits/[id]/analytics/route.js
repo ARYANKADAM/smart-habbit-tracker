@@ -21,9 +21,10 @@ export async function GET(request, { params }) {
     const user = await User.findById(userId);
     const userTimezone = user?.timezone || 'Asia/Kolkata';
 
-    const habit = await Habit.findOne({ _id: id, userId });
+    // Verify habit exists and is active
+    const habit = await Habit.findOne({ _id: id, userId, isActive: true });
     if (!habit) {
-      return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Habit not found or inactive' }, { status: 404 });
     }
 
     const streak = await Streak.findOne({ habitId: id });

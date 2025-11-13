@@ -17,33 +17,14 @@ export async function GET() {
     const activeHabits = await Habit.find({ userId, isActive: true }).select('_id');
     const activeHabitIds = activeHabits.map(h => h._id);
 
-    // Fetch goals only for active habits
+    // Fetch goals only for active habits - no updates, just return
     const goals = await Goal.find({ 
       userId,
       habitId: { $in: activeHabitIds }
     }).populate('habitId', 'habitName displayName').sort({ createdAt: -1 });
-    
-    // Update progress for each active goal
-    for (const goal of goals) {
-      if (goal.status === 'active') {
-        const progress = await calculateGoalProgress(goal);
-        goal.currentProgress = progress;
-        
-        // Check if goal is completed or failed
-        if (progress >= goal.targetCount) {
-          goal.status = 'completed';
-          goal.completedAt = new Date();
-        } else if (new Date() > goal.endDate) {
-          goal.status = 'failed';
-        }
-        
-        await goal.save();
-      }
-    }
 
     return NextResponse.json({ goals }, { status: 200 });
   } catch (error) {
-    console.error('Get goals error:', error);
     return NextResponse.json({ error: 'Failed to fetch goals' }, { status: 500 });
   }
 }
@@ -62,10 +43,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Verify habit belongs to user
-    const habit = await Habit.findOne({ _id: habitId, userId });
+    // Verify habit belongs to user and is active
+    const habit = await Habit.findOne({ _id: habitId, userId, isActive: true });
     if (!habit) {
-      return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Habit not found or inactive' }, { status: 404 });
+    }
+
+    // Check for duplicate active goal
+    const existingGoal = await Goal.findOne({
+      userId,
+      habitId,
+      period,
+      status: 'active'
+    });
+    if (existingGoal) {
+      return NextResponse.json({ error: `You already have an active ${period} goal for this habit` }, { status: 400 });
     }
 
     // Calculate start and end dates
@@ -91,7 +83,6 @@ export async function POST(request) {
 
     return NextResponse.json({ goal: populatedGoal }, { status: 201 });
   } catch (error) {
-    console.error('Create goal error:', error);
     return NextResponse.json({ error: 'Failed to create goal' }, { status: 500 });
   }
 }
@@ -105,4 +96,32 @@ async function calculateGoalProgress(goal) {
   });
   
   return logs.length;
+}
+
+// Export function to update goals after check-in
+export async function updateGoalsAfterCheckIn(habitId, userId) {
+  try {
+    const goals = await Goal.find({ 
+      habitId, 
+      userId,
+      status: 'active' 
+    });
+
+    for (const goal of goals) {
+      const progress = await calculateGoalProgress(goal);
+      goal.currentProgress = progress;
+      
+      // Check if goal is completed or failed
+      if (progress >= goal.targetCount) {
+        goal.status = 'completed';
+        goal.completedAt = new Date();
+      } else if (new Date() > goal.endDate) {
+        goal.status = 'failed';
+      }
+      
+      await goal.save();
+    }
+  } catch (error) {
+    // Silently fail - don't break check-in if goal update fails
+  }
 }

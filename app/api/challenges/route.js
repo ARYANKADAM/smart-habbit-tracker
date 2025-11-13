@@ -17,24 +17,16 @@ export async function GET() {
     const activeHabits = await Habit.find({ userId, isActive: true }).select('_id');
     const activeHabitIds = activeHabits.map(h => h._id);
 
-    // Fetch challenges only for active habits
+    // Fetch challenges only for active habits - no updates, just return
     const challenges = await StreakChallenge.find({ 
       userId,
       habitId: { $in: activeHabitIds }
     })
       .populate('habitId', 'habitName displayName')
       .sort({ createdAt: -1 });
-    
-    // Update each active challenge
-    for (const challenge of challenges) {
-      if (challenge.status === 'active') {
-        await updateChallengeProgress(challenge);
-      }
-    }
 
     return NextResponse.json({ challenges }, { status: 200 });
   } catch (error) {
-    console.error('Get challenges error:', error);
     return NextResponse.json({ error: 'Failed to fetch challenges' }, { status: 500 });
   }
 }
@@ -53,10 +45,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Verify habit belongs to user
-    const habit = await Habit.findOne({ _id: habitId, userId });
+    // Verify habit belongs to user and is active
+    const habit = await Habit.findOne({ _id: habitId, userId, isActive: true });
     if (!habit) {
-      return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Habit not found or inactive' }, { status: 404 });
     }
 
     // Calculate dates
@@ -80,51 +72,24 @@ export async function POST(request) {
 
     return NextResponse.json({ challenge: populatedChallenge }, { status: 201 });
   } catch (error) {
-    console.error('Create challenge error:', error);
     return NextResponse.json({ error: 'Failed to create challenge' }, { status: 500 });
   }
 }
 
 // Helper function to update challenge progress
 async function updateChallengeProgress(challenge) {
-  const logs = await DailyLog.find({
-    habitId: challenge.habitId,
-    completed: true,
-    date: { $gte: challenge.startDate, $lte: challenge.endDate },
-  }).sort({ date: 1 });
-
-  // Calculate current streak
-  let currentStreak = 0;
-  let tempStreak = 0;
-  const now = DateTime.now().setZone('Asia/Kolkata').startOf('day');
-
-  for (let i = 0; i < logs.length; i++) {
-    const logDate = DateTime.fromJSDate(logs[i].date).setZone('Asia/Kolkata').startOf('day');
-    
-    if (i === 0) {
-      tempStreak = 1;
-    } else {
-      const prevDate = DateTime.fromJSDate(logs[i - 1].date).setZone('Asia/Kolkata').startOf('day');
-      const diff = logDate.diff(prevDate, 'days').days;
-      
-      if (diff === 1) {
-        tempStreak++;
-      } else {
-        tempStreak = 1;
-      }
-    }
-
-    // Check if streak is current (includes today or yesterday)
-    const daysSinceLog = now.diff(logDate, 'days').days;
-    if (daysSinceLog <= 1) {
-      currentStreak = tempStreak;
-    }
-  }
+  // Import Streaks model to reuse existing streak data
+  const Streaks = (await import('@/models/Streaks')).default;
+  
+  // Get current streak from Streaks table (single source of truth)
+  const streak = await Streaks.findOne({ habitId: challenge.habitId });
+  const currentStreak = streak?.currentStreak || 0;
+  const lastCheckIn = streak?.lastCompletedDate || null;
 
   challenge.currentStreak = currentStreak;
-  challenge.lastCheckInDate = logs.length > 0 ? logs[logs.length - 1].date : null;
+  challenge.lastCheckInDate = lastCheckIn;
 
-  // Update status
+  // Update status based on current streak and dates
   if (currentStreak >= challenge.targetDays) {
     challenge.status = 'completed';
     challenge.completedAt = new Date();
@@ -133,4 +98,21 @@ async function updateChallengeProgress(challenge) {
   }
 
   await challenge.save();
+}
+
+// Export function to update challenges after check-in
+export async function updateChallengesAfterCheckIn(habitId, userId) {
+  try {
+    const challenges = await StreakChallenge.find({ 
+      habitId, 
+      userId,
+      status: 'active' 
+    });
+
+    for (const challenge of challenges) {
+      await updateChallengeProgress(challenge);
+    }
+  } catch (error) {
+    // Silently fail - don't break check-in if challenge update fails
+  }
 }

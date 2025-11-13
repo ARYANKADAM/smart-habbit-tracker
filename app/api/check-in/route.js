@@ -36,15 +36,6 @@ export async function POST(request) {
       { new: true, upsert: true }
     );
 
-    console.log('📝 Daily log created/updated:', {
-      userId,
-      habitId,
-      logDate: logDate.toISOString(),
-      completed,
-      timezone: userTimezone,
-      logId: dailyLog._id
-    });
-
     // Update habit last completed date
     let updatedHabit = null;
     if (completed) {
@@ -57,17 +48,21 @@ export async function POST(request) {
         },
         { new: true }
       );
-      
-      console.log('✅ Updated habit in DB:', {
-        habitId,
-        habitName: updatedHabit?.habitName,
-        logDate: logDate.toISOString(),
-        savedLastCompletedDate: updatedHabit.lastCompletedDate?.toISOString()
-      });
     }
 
     // Update streak
     const streak = await updateStreakAfterCheckIn(habitId, completed, userTimezone);
+
+    // Update goals and challenges progress
+    if (completed) {
+      // Update goals for this habit
+      const { updateGoalsAfterCheckIn } = await import('@/api/goals/route');
+      await updateGoalsAfterCheckIn(habitId, userId);
+      
+      // Update challenges for this habit
+      const { updateChallengesAfterCheckIn } = await import('@/api/challenges/route');
+      await updateChallengesAfterCheckIn(habitId, userId);
+    }
 
     // Return completedToday flag so frontend can update immediately
     return NextResponse.json({ 

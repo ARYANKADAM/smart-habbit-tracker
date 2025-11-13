@@ -253,6 +253,13 @@ export default function DashboardPage() {
                       Analytics
                     </button>
                     <button
+                      onClick={() => handleDropdownRoute('/dashboard/garden')}
+                      className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white/90 hover:text-white"
+                    >
+                      <span className="w-4 h-4 text-center">🌱</span>
+                      Habit Garden
+                    </button>
+                    <button
                       onClick={() => handleDropdownRoute('/dashboard/progress')}
                       className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-white/10 transition-colors"
                     >

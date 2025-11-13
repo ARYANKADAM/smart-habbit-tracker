@@ -155,7 +155,7 @@ export default function GardenPage() {
 
                   {/* Habit Name */}
                   <div className="text-center mb-4">
-                    <h3 className="text-lg font-semibold text-white mb-1">{habit.name}</h3>
+                    <h3 className="text-lg font-semibold text-white mb-1">{habit.habitName || habit.name}</h3>
                     <div className="text-xs text-gray-400 capitalize">
                       {habit.category} • {habit.frequency}
                     </div>

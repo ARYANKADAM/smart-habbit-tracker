@@ -11,7 +11,7 @@ export default function Sidebar() {
   const links = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
     { href: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
-    { href: '/dashboard/progress', label: 'Progress', icon: '�' },
+    { href: '/dashboard/garden', label: 'Habit Garden', icon: '🌱' },
     { href: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
   ];
 

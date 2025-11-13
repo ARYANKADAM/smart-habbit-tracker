@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Trash2, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
+import { getPlantStage } from '@/lib/plantGrowth';
 
 export default function HabitCard({ habit, streak, onCheckIn, onDelete }) {
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,12 @@ export default function HabitCard({ habit, streak, onCheckIn, onDelete }) {
       setLoading(false);
     }
   };
+
+  // Get plant stage for this habit
+  const plantStage = getPlantStage(
+    streak?.currentStreak || 0,
+    streak?.isCurrentStreak !== false
+  );
 
   return (
     <div className="group bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 p-6 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-3xl hover:border-white/30 relative overflow-hidden">
@@ -92,6 +99,11 @@ export default function HabitCard({ habit, streak, onCheckIn, onDelete }) {
         </div>
 
         <div className="text-center">
+          <div className="relative mb-1">
+            <div className="text-2xl" title={plantStage.name}>
+              {plantStage.emoji}
+            </div>
+          </div>
           <div className="relative">
             <div className="text-3xl font-black text-transparent bg-gradient-to-br from-orange-400 to-red-400 bg-clip-text drop-shadow-sm">
               {streak?.currentStreak || 0}

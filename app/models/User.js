@@ -23,7 +23,6 @@ const UserSchema = new mongoose.Schema(
     googleUid: {
       type: String,
       default: null,
-      sparse: true, // Allows null values and still maintains uniqueness
     },
     photoURL: {
       type: String,

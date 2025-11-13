@@ -40,19 +40,6 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: 'Asia/Kolkata',
     },
-    emailNotificationsEnabled: {
-      type: Boolean,
-      default: true,
-    },
-    emailFrequency: {
-      type: String,
-      enum: ['daily', '3xweek', 'weekly'],
-      default: 'daily',
-    },
-    weeklyDigestEnabled: {
-      type: Boolean,
-      default: true,
-    },
     isActive: {
       type: Boolean,
       default: true,

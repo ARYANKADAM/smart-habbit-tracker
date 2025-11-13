@@ -5,8 +5,9 @@ import Habit from '@/models/Habit';
 import { sendDailyHabitReminder } from '@/lib/email';
 import { DateTime } from 'luxon';
 
-// This endpoint is triggered by Vercel Cron
-// Add to vercel.json: { "path": "/api/cron/send-daily-emails", "schedule": "*/15 * * * *" }
+// This endpoint is triggered by Vercel Cron once daily at 9 PM IST
+// vercel.json: { "path": "/api/cron/send-daily-emails", "schedule": "30 15 * * *" }
+// Schedule: 30 15 * * * = 3:30 PM UTC = 9:00 PM IST
 export async function GET(request) {
   try {
     // Verify cron secret to prevent unauthorized access
@@ -17,19 +18,11 @@ export async function GET(request) {
 
     await dbConnect();
 
-    // Get current time in 15-minute intervals (e.g., "09:00", "09:15", "09:30")
     const now = DateTime.now().setZone('Asia/Kolkata');
-    const currentHour = now.hour.toString().padStart(2, '0');
-    const currentMinute = Math.floor(now.minute / 15) * 15;
-    const currentTimeSlot = `${currentHour}:${currentMinute.toString().padStart(2, '0')}`;
 
-    // Find users who have notifications enabled and checkInTime matches current slot
+    // Find all users who have email notifications enabled
     const users = await User.find({
-      emailNotificationsEnabled: true,
-      checkInTime: {
-        $gte: currentTimeSlot,
-        $lt: DateTime.fromFormat(currentTimeSlot, 'HH:mm').plus({ minutes: 15 }).toFormat('HH:mm')
-      }
+      emailNotificationsEnabled: { $ne: false } // Send to all users (default true)
     });
 
     let emailsSent = 0;
@@ -58,8 +51,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Daily reminders sent',
-      timeSlot: currentTimeSlot,
+      message: 'Daily reminders sent at 9 PM IST',
       usersChecked: users.length,
       emailsSent,
       errors,

@@ -20,9 +20,6 @@ export default function DashboardLayout({ children }) {
         return;
       }
       const data = await res.json();
-      console.log('🔍 User data from API:', data.user);
-      console.log('🔍 Display name:', data.user?.displayName);
-      console.log('🔍 Email:', data.user?.email);
       setUser(data.user);
     } catch (error) {
       router.push('/auth/login');
@@ -40,7 +37,6 @@ export default function DashboardLayout({ children }) {
   }
 
   // ✅ Pass user data to children
-  console.log('🔍 Layout passing user to children:', user);
   return (
     <>
       {React.cloneElement(children, { currentUser: user })}

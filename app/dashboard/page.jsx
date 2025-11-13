@@ -20,17 +20,12 @@ export default function DashboardPage() {
 
   // Function to get display name with proper fallback
   const getDisplayName = () => {
-    console.log('🔍 Getting display name...');
     if (currentUser?.displayName && currentUser.displayName.trim() !== '') {
-      console.log('✅ Using displayName:', currentUser.displayName);
       return currentUser.displayName.trim();
     }
     if (currentUser?.email) {
-      const emailName = currentUser.email.split('@')[0];
-      console.log('⚠️ Using email fallback:', emailName);
-      return emailName;
+      return currentUser.email.split('@')[0];
     }
-    console.log('❌ No user data, using fallback');
     return 'User';
   };
 
@@ -50,8 +45,6 @@ export default function DashboardPage() {
         return;
       }
       const data = await res.json();
-      console.log('🔍 Fetched user data:', data.user);
-      console.log('🔍 Display name from API:', data.user?.displayName);
       setCurrentUser(data.user);
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -80,42 +73,32 @@ export default function DashboardPage() {
       // Mark completedToday based on lastCompletedDate with timezone handling
       const today = DateTime.now().setZone(userTimezone).startOf('day');
 
-      console.log('🔍 Today in timezone:', {
-        timezone: userTimezone,
-        today: today.toISO(),
-        todayMillis: today.toMillis()
-      });
-
       const habitsWithTodayFlag = data.habits.map((habit) => {
         if (!habit.lastCompletedDate) {
-          console.log(`❌ ${habit.habitName}: No lastCompletedDate`);
           return { ...habit, completedToday: false };
         }
         
         const lastDate = DateTime.fromISO(habit.lastCompletedDate, { zone: userTimezone }).startOf('day');
         const completedToday = lastDate.toMillis() === today.toMillis();
         
-        console.log(`🔍 ${habit.habitName}:`, {
-          lastCompletedDate: habit.lastCompletedDate,
-          lastDateISO: lastDate.toISO(),
-          lastDateMillis: lastDate.toMillis(),
-          todayMillis: today.toMillis(),
-          match: completedToday,
-          diff: Math.abs(lastDate.toMillis() - today.toMillis())
-        });
-        
         return { ...habit, completedToday };
       });
 
       setHabits(habitsWithTodayFlag);
 
-      // Fetch streaks
-      const streakData = {};
-      for (const habit of habitsWithTodayFlag) {
-        const resStreak = await fetch(`/api/habits/${habit._id}/streak`);
-        const dataStreak = await resStreak.json();
-        streakData[habit._id] = dataStreak.streak || { currentStreak: 0, longestStreak: 0 };
-      }
+      // Fetch all streaks in parallel (MUCH faster!)
+      const streakPromises = habitsWithTodayFlag.map(habit => 
+        fetch(`/api/habits/${habit._id}/streak`)
+          .then(res => res.json())
+          .then(data => ({ id: habit._id, streak: data.streak || { currentStreak: 0, longestStreak: 0 } }))
+      );
+      
+      const streakResults = await Promise.all(streakPromises);
+      const streakData = streakResults.reduce((acc, { id, streak }) => {
+        acc[id] = streak;
+        return acc;
+      }, {});
+      
       setStreaks(streakData);
     } catch (err) {
       console.error(err);
@@ -128,13 +111,6 @@ export default function DashboardPage() {
     try {
       const logDate = DateTime.now().setZone(userTimezone).startOf('day').toISO();
       
-      console.log('📝 Check-in request:', {
-        habitId,
-        completed,
-        logDate,
-        timezone: userTimezone
-      });
-      
       const res = await fetch('/api/check-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,8 +118,6 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to check in');
-
-      console.log('✅ Check-in response:', data);
 
       // Update streak and mark completedToday
       setStreaks((prev) => ({ ...prev, [habitId]: data.streak }));

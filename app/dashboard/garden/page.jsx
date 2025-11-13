@@ -22,20 +22,24 @@ export default function GardenPage() {
       const habitsRes = await fetch('/api/habits');
       const habitsData = await habitsRes.json();
       
+      console.log('Habits data:', habitsData);
+      
       if (habitsData.habits) {
         // Fetch streaks for each habit in parallel
         const streakPromises = habitsData.habits.map(async (habit) => {
           const streakRes = await fetch(`/api/habits/${habit._id}/streak`);
           const streakData = await streakRes.json();
+          console.log(`Streak for ${habit.habitName}:`, streakData);
           return {
             ...habit,
-            currentStreak: streakData.currentStreak || 0,
-            longestStreak: streakData.longestStreak || 0,
-            isCurrentStreak: streakData.isCurrentStreak || false,
+            currentStreak: streakData.streak?.currentStreak || 0,
+            longestStreak: streakData.streak?.longestStreak || 0,
+            isCurrentStreak: streakData.streak?.isCurrentStreak || false,
           };
         });
 
         const habitsWithStreakData = await Promise.all(streakPromises);
+        console.log('Final habits with streaks:', habitsWithStreakData);
         setHabitsWithStreaks(habitsWithStreakData);
       }
     } catch (error) {

@@ -105,8 +105,29 @@ export function getPlantHealth(currentStreak, isCurrentStreak = true) {
     return 10; // Just planted
   }
 
-  // Health increases with streak, caps at 100
-  const health = Math.min(100, 10 + (currentStreak * 0.9));
+  // More visible health progression:
+  // Days 1-6: 20-35% (Seed stage)
+  // Days 7-20: 35-50% (Sprout)
+  // Days 21-49: 50-70% (Young Plant)
+  // Days 50-99: 70-85% (Mature Plant)
+  // Days 100-199: 85-95% (Tree)
+  // Days 200+: 95-100% (Blooming)
+  
+  let health;
+  if (currentStreak >= 200) {
+    health = Math.min(100, 95 + (currentStreak - 200) * 0.05);
+  } else if (currentStreak >= 100) {
+    health = 85 + ((currentStreak - 100) / 100) * 10; // 85-95%
+  } else if (currentStreak >= 50) {
+    health = 70 + ((currentStreak - 50) / 50) * 15; // 70-85%
+  } else if (currentStreak >= 21) {
+    health = 50 + ((currentStreak - 21) / 29) * 20; // 50-70%
+  } else if (currentStreak >= 7) {
+    health = 35 + ((currentStreak - 7) / 14) * 15; // 35-50%
+  } else {
+    health = 20 + (currentStreak / 6) * 15; // 20-35%
+  }
+  
   return Math.round(health);
 }
 

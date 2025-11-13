@@ -3,18 +3,25 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Clock, Bell, Globe } from 'lucide-react';
+import { ArrowLeft, Clock, Bell, Globe, User, Mail, Lock } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
+    displayName: '',
+    email: '',
     checkInTime: '21:00',
     timezone: 'Asia/Kolkata',
     emailNotificationsEnabled: true,
     emailFrequency: 'daily',
     weeklyDigestEnabled: true,
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   // Fetch current user settings
@@ -41,20 +48,42 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const updateData = { ...settings };
+
+      // Add password change if provided
+      if (passwordData.newPassword) {
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+          toast.error('New passwords do not match');
+          setSaving(false);
+          return;
+        }
+        updateData.currentPassword = passwordData.currentPassword;
+        updateData.newPassword = passwordData.newPassword;
+      }
+
       const res = await fetch('/api/user/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(updateData),
       });
+
+      const data = await res.json();
 
       if (res.ok) {
         toast.success('✅ Settings saved successfully!');
+        // Clear password fields after successful save
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        // Refresh settings
+        fetchSettings();
       } else {
-        throw new Error('Failed to save');
+        toast.error(data.error || 'Failed to save settings');
       }
     } catch (err) {
       toast.error('Failed to save settings');
-      console.error(err);
     } finally {
       setSaving(false);
     }
@@ -85,8 +114,82 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Settings Card */}
+        {/* Profile Settings Card */}
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 space-y-6 mb-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Profile Information</h2>
+          
+          {/* Display Name */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+              <User size={18} className="text-purple-400" />
+              Display Name
+            </label>
+            <input
+              type="text"
+              value={settings.displayName}
+              onChange={(e) => setSettings({ ...settings, displayName: e.target.value })}
+              placeholder="Enter your name"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+              <Mail size={18} className="text-purple-400" />
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={settings.email}
+              onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+              placeholder="your@email.com"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Used for login and notifications
+            </p>
+          </div>
+
+          {/* Change Password Section */}
+          <div className="pt-4 border-t border-white/10">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+              <Lock size={18} className="text-purple-400" />
+              Change Password
+            </label>
+            
+            <div className="space-y-3">
+              <input
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                placeholder="Current password"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              />
+              <input
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                placeholder="New password (min. 6 characters)"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              />
+              <input
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                placeholder="Confirm new password"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Leave blank to keep current password
+            </p>
+          </div>
+        </div>
+
+        {/* Preferences Card */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 space-y-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Preferences</h2>
           
           {/* Daily Check-In Time */}
           <div>

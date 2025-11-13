@@ -4,6 +4,7 @@ import { signToken } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { auth as firebaseAdmin } from 'firebase-admin';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { authorizeEmailInMailgun } from '@/lib/email';
 
 // Initialize Firebase Admin (for token verification)
 if (getApps().length === 0) {
@@ -59,6 +60,13 @@ export async function POST(request) {
         photoURL: photoURL || '',
       });
       console.log('✅ New Google user created:', email);
+      
+      // Auto-authorize email in Mailgun
+      try {
+        await authorizeEmailInMailgun(user.email);
+      } catch (error) {
+        console.log('Mailgun authorization note:', error.message);
+      }
     } else {
       // Update existing user with Google UID if not present
       if (!user.googleUid) {

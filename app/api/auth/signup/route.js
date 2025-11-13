@@ -3,6 +3,7 @@ import User from '@/models/User';
 import { signToken } from '@/lib/auth';
 import bcryptjs from 'bcryptjs';
 import { NextResponse } from 'next/server';
+import { authorizeEmailInMailgun } from '@/lib/email';
 
 export async function POST(request) {
   try {
@@ -43,6 +44,15 @@ export async function POST(request) {
       password: hashedPassword,
       displayName: displayName || email.split('@')[0],
     });
+
+    // Auto-authorize email in Mailgun (for sandbox domain)
+    // This allows the user to receive emails without manual authorization
+    try {
+      await authorizeEmailInMailgun(user.email);
+    } catch (error) {
+      console.log('Mailgun authorization note:', error.message);
+      // Don't fail signup if Mailgun authorization fails
+    }
 
     // Sign token
     const token = await signToken(user._id.toString());

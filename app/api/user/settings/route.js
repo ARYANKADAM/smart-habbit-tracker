@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getCurrentUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { authorizeEmailInMailgun } from '@/lib/email';
 
 // GET - Fetch user settings
 export async function GET() {
@@ -66,6 +67,13 @@ export async function PUT(request) {
         return NextResponse.json({ error: 'Email already in use' }, { status: 400 });
       }
       user.email = email.toLowerCase();
+      
+      // Auto-authorize new email in Mailgun
+      try {
+        await authorizeEmailInMailgun(email.toLowerCase());
+      } catch (error) {
+        console.log('Mailgun authorization note:', error.message);
+      }
     }
 
     // Handle password change
@@ -107,7 +115,19 @@ export async function PUT(request) {
     if (displayName !== undefined) user.displayName = displayName;
     if (checkInTime !== undefined) user.checkInTime = checkInTime;
     if (timezone !== undefined) user.timezone = timezone;
-    if (emailNotificationsEnabled !== undefined) user.emailNotificationsEnabled = emailNotificationsEnabled;
+    if (emailNotificationsEnabled !== undefined) {
+      const wasDisabled = !user.emailNotificationsEnabled;
+      user.emailNotificationsEnabled = emailNotificationsEnabled;
+      
+      // If user is enabling notifications, auto-authorize their email
+      if (wasDisabled && emailNotificationsEnabled) {
+        try {
+          await authorizeEmailInMailgun(user.email);
+        } catch (error) {
+          console.log('Mailgun authorization note:', error.message);
+        }
+      }
+    }
     if (emailFrequency !== undefined) user.emailFrequency = emailFrequency;
     if (weeklyDigestEnabled !== undefined) user.weeklyDigestEnabled = weeklyDigestEnabled;
 

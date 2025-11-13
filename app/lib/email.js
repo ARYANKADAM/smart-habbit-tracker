@@ -7,6 +7,26 @@ const mg = mailgun.client({
   key: process.env.MAILGUN_API_KEY,
 });
 
+// Auto-authorize email address in Mailgun (for sandbox domain)
+export async function authorizeEmailInMailgun(email) {
+  try {
+    // Add recipient to authorized list
+    const data = await mg.routes.create(process.env.MAILGUN_DOMAIN, {
+      priority: 0,
+      description: `Auto-authorized recipient: ${email}`,
+      expression: `match_recipient("${email}")`,
+      action: ['forward("http://api.mailgun.net/v3/")']
+    });
+
+    console.log(`Successfully authorized email: ${email}`);
+    return { success: true, data };
+  } catch (error) {
+    // If already authorized or error, just log and continue
+    console.log(`Email authorization note for ${email}:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function sendDailyHabitReminder(user, habits) {
   const dashboardUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smart-habbit-tracker.vercel.app';
 

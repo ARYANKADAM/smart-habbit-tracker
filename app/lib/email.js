@@ -1,6 +1,11 @@
-import { Resend } from 'resend';
+import formData from 'form-data';
+import Mailgun from 'mailgun.js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+  username: 'api',
+  key: process.env.MAILGUN_API_KEY,
+});
 
 export async function sendDailyHabitReminder(user, habits) {
   const dashboardUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smart-habbit-tracker.vercel.app';
@@ -94,17 +99,12 @@ export async function sendDailyHabitReminder(user, habits) {
   `;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Habit Tracker <onboarding@resend.dev>', // Change to your verified domain
+    const data = await mg.messages.create(process.env.MAILGUN_DOMAIN, {
+      from: `Habit Tracker <noreply@${process.env.MAILGUN_DOMAIN}>`,
       to: [user.email],
       subject: `🎯 Daily Habit Reminder - ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`,
       html: emailHtml,
     });
-
-    if (error) {
-      console.error('Email send error:', error);
-      throw error;
-    }
 
     return data;
   } catch (error) {
